@@ -14,6 +14,7 @@ import keras
 from keras import layers
 from keras import ops
 from keras.layers import TextVectorization
+from keras.models import Model
 
 class TransformerEncoder(layers.Layer):
     def __init__(self, embed_dim, dense_dim, num_heads, **kwargs):
@@ -259,3 +260,32 @@ for inputs, targets in train_ds.take(1):
     print(f'inputs["decoder_inputs"].shape: {inputs["decoder_inputs"].shape}')
     print(f"targets.shape: {targets.shape}")
 
+embed_dim = 256
+latent_dim = 2048
+num_heads = 8
+
+encoder_inputs = keras.Input(shape=(None,), dtype="int64", name="encoder_inputs")
+x = PositionalEmbedding(sequence_length, vocab_size, embed_dim)(encoder_inputs)
+encoder_outputs = TransformerEncoder(embed_dim, latent_dim, num_heads)(x)
+encoder = keras.Model(encoder_inputs, encoder_outputs)
+
+decoder_inputs = keras.Input(shape=(None,), dtype="int64", name="decoder_inputs")
+encoded_seq_inputs = keras.Input(shape=(None, embed_dim), name="decoder_state_inputs")
+x = PositionalEmbedding(sequence_length, vocab_size, embed_dim)(decoder_inputs)
+x = TransformerDecoder(embed_dim, latent_dim, num_heads)(x, encoded_seq_inputs)
+x = layers.Dropout(0.5)(x)
+decoder_outputs = layers.Dense(vocab_size, activation="softmax")(x)
+decoder = keras.Model([decoder_inputs, encoded_seq_inputs], decoder_outputs)
+
+decoder_outputs = decoder([decoder_inputs, encoder_outputs])
+transformer = Model(
+    [encoder_inputs, decoder_inputs], decoder_outputs, name="transformer"
+)
+
+epochs = 1  # This should be at least 30 for convergence
+
+transformer.summary()
+transformer.compile(
+    optimizer = "adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+)
+transformer.fit(train_ds, epochs=epochs, validation_data=val_ds)
