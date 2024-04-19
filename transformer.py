@@ -286,6 +286,6 @@ epochs = 1  # This should be at least 30 for convergence
 
 transformer.summary()
 transformer.compile(
-    optimizer = "adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+    optimizer = "rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
 transformer.fit(train_ds, epochs=epochs, validation_data=val_ds)
