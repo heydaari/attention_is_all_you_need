@@ -282,9 +282,10 @@ transformer = Model(
     [encoder_inputs, decoder_inputs], decoder_outputs, name="transformer"
 )
 
-epochs = 1  # This should be at least 30 for convergence
+epochs = 3
 
 transformer.summary()
+
 transformer.compile(
     optimizer = "rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
