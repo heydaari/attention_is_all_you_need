@@ -288,4 +288,34 @@ transformer.summary()
 transformer.compile(
     optimizer = "rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
-transformer.fit(train_ds, epochs=epochs, validation_data=val_ds)
+history = transformer.fit(train_ds, epochs=epochs, validation_data=val_ds)
+
+spa_vocab = spa_vectorization.get_vocabulary()
+spa_index_lookup = dict(zip(range(len(spa_vocab)), spa_vocab))
+max_decoded_sentence_length = 20
+
+
+def decode_sequence(input_sentence):
+    tokenized_input_sentence = eng_vectorization([input_sentence])
+    decoded_sentence = "[start]"
+    for i in range(max_decoded_sentence_length):
+        tokenized_target_sentence = spa_vectorization([decoded_sentence])[:, :-1]
+        predictions = transformer([tokenized_input_sentence, tokenized_target_sentence])
+
+        # ops.argmax(predictions[0, i, :]) is not a concrete value for jax here
+        sampled_token_index = ops.convert_to_numpy(
+            ops.argmax(predictions[0, i, :])
+        ).item(0)
+        sampled_token = spa_index_lookup[sampled_token_index]
+        decoded_sentence += " " + sampled_token
+
+        if sampled_token == "[end]":
+            break
+    return decoded_sentence
+
+
+test_eng_texts = [pair[0] for pair in test_pairs]
+for _ in range(30):
+    input_sentence = random.choice(test_eng_texts)
+    translated = decode_sequence(input_sentence)
+    print(input_sentence, translated, sep = '-->')
