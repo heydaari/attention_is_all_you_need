@@ -42,6 +42,3 @@ To use the model for translating English sentences to Spanish, you can clone thi
 
 Contributions to this project are welcome. If you have suggestions for improving the model or the code, please open an issue to discuss your ideas. If you wish to contribute code, please open a pull request.
 
-## License
-
-This project is open source and available under the MIT License.
